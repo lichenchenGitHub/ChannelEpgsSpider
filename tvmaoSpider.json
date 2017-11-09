@@ -1,0 +1,15 @@
+[{
+  "name": "tvmaoSpider",
+  "script": "./tvmaoSpider.js",
+  "out_file": "./logs/tvmaoSpider_demo_access.log",
+  "error_file": "./logs/tvmaoSpider_demo_error.log",
+  "merge_logs": true,
+  "env_production": {
+    "NODE_ENV": "production",
+    "PORT": "8080"
+  },
+  "env_development": {
+    "NODE_ENV": "development",
+    "PORT": "3000"
+  }
+}]

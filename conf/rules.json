@@ -1,0 +1,39 @@
+﻿{
+  "default": "ignore",
+  "duplicate": false,
+  "expire": 5400,
+  "delay": 1800000,
+  "ttl": 120000,
+  "fail": 300000,
+  "inactive": 60000,
+  "init": 14400000,
+  "rules": [
+    {
+      "site": "tvmao",
+      "baseUrl": "http://www.tvmao.com/program/CCTV-CCTV1-w1.html",
+      "headers": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36",
+      "enable": true,
+      "pattern": "^http:\/\/www.tvmao.com\/(program|program_satellite)\/(.+)-w(\\d+).html$",
+      "ras": "tvmaochannelPage"
+    },
+    {
+      "site": "tvsou",
+      "baseUrl": "https://www.tvsou.com/epg/CCTV-1?class=yangshi",
+      "headers": "",
+      "enable": true,
+      "pattern": "^(http|https):\/\/www.tvsou.com\/epg\/(.+)\\?class=(yangshi|weishi)$",
+      "ras": "tvsouchannelPage"
+    },
+    {
+      "site": "tvsou",
+      "baseUrl": "https://www.tvsou.com/epg/HNTV-1?class=weishi",
+      "headers": "",
+      "enable": true,
+      "pattern": "^(http|https):\/\/www.tvsou.com\/epg\/(.+)\\?class=(yangshi|weishi)$",
+      "ras": "tvsouchannelPage"
+    }
+  ],
+  "headers": {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36"
+  }
+}

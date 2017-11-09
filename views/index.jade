@@ -1,0 +1,374 @@
+extends layout
+
+block content
+    ul#myTab.nav.nav-tabs
+        li.active
+            a(href='#channel') 频道信息
+        li
+            a(href='#channelEpg') 节目信息
+        li
+            a(href='#compare') 信息对比
+    .tab-content
+        #channel.tab-pane.active
+            div
+                form.form-inline(id='channelForm', name='channelForm')
+                    .form-group.col-xs-12.col-md-12
+                        h4
+                            b 频道信息
+                    .form-group.col-xs-10.col-md-3
+                        label.control-label.col-xs-5
+                            select.form-control(name='site' id='site')
+                                option(value='tvmao') tvmao
+                                option(value='tvsou') tvsou
+                    .form-group.col-xs-2.col-md-3
+                        input.btn.btn-primary(type='submit', value='确定')
+            div(style='clear:both;padding-top:50px' id='channelTable' class='table-responsive')
+        #channelEpg.tab-pane
+            div(id='sideMenu')
+                div(class='compareDiv')
+                    ul
+                div
+                    input(type='button',class='btn btn-primary' onclick='getDetail()' value='对比' style='float:right')
+            div
+                form.form-inline(id='channelEpgForm', name='channelEpgForm')
+                    .form-group.col-xs-12.col-md-12
+                        h4
+                            b 节目信息
+                    .form-group.col-xs-10.col-md-2
+                        label.control-label
+                            select.form-control(style="width:100%" name='epgSite' id='epgSite')
+                                option(value='tvmao') tvmao
+                                option(value='tvsou') tvsou
+                    .form-group.col-xs-10.col-md-3
+                        select.form-control(style="width:100%" name='schid' id='schid')
+                    .form-group.col-xs-10.col-md-5(style='padding-left:40px')
+                        input#StartTime.form-control(placeholder='')
+                        span -
+                        input#EndTime.form-control(placeholder='')
+                    .form-group.col-xs-2.col-md-2
+                        input.btn.btn-primary(type='submit', value='确定')
+
+            div(style='clear:both;padding-top:50px' id='channelEpgTable' class='table-responsive')
+            #myModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
+                .modal-dialog
+                    .modal-content
+                        .modal-header
+                            button.close(type='button', data-dismiss='modal', aria-label='Close')
+                                span(aria-hidden='true') &times;
+                            h4#myModalLabel.modal-title 节目详情
+                        .modal-body
+
+                        .modal-footer
+                            button.btn.btn-default(type='button', data-dismiss='modal') 关闭
+        #compare.tab-pane
+            div
+                form.form-inline(id='compareForm', name='compareForm')
+                    .form-group.col-xs-12.col-md-12
+                        h4
+                            b 信息对比
+                    .form-group.col-xs-10.col-md-2
+                        label.control-label
+                            select.form-control(style="width:100%" name='epgSite' id='compareSite')
+                                option(value='tvmao') tvmao
+                                option(value='tvsou') tvsou
+                    .form-group.col-xs-10.col-md-3
+                        select.form-control(style="width:100%" name='schid' id='compareSchid')
+                    .form-group.col-xs-10.col-md-2
+                        input#date.form-control(placeholder='')
+                    .form-group.col-xs-2.col-md-2
+                        input.btn.btn-primary(type='submit', value='加入')
+                div(style='clear:both;padding-top:20px' class='form-inline')
+                    .form-group.col-xs-12.col-md-12
+                        input(type='button' class='btn btn-primary' value='清空' id='clear')
+                div(id="tableCollection" style='clear:both')
+    script.
+        $(function () {
+            $("#sideMenu").BootSideMenu({side: 'right', autoClose: true});
+            var compareObj = $("#sideMenu > div.row > div.col-xs-12.col-sm-12.col-md-12.col-lg1-12 > div.compareDiv>ul>li");
+            if (compareObj == null || compareObj == 'undefined' || compareObj.length == 0) {
+                $("#sideMenu > div.toggler").append("<br/><span>0</span>");
+            }
+            getSchid($("#epgSite").val());
+            getSchidCompare($("#compareSite").val());
+            $("#epgSite").change(function () {
+                getSchid($(this).val());
+            })
+            $("#compareSite").change(function () {
+                getSchidCompare($(this).val());
+            })
+            $('#myTab a').click(function (e) {
+                e.preventDefault();
+                $(this).tab('show');
+            })
+            $("#StartTime").datetimepicker({
+                minView: 'month',
+                format: 'yyyy-mm-dd',
+                autoclose: true,
+                language: 'zh-CN'
+            })
+            $("#EndTime").datetimepicker({
+                minView: 'month',
+                format: 'yyyy-mm-dd',
+                autoclose: true,
+                language: 'zh-CN'
+            })
+            $("#date").datetimepicker({
+                minView: 'month',
+                format: 'yyyy-mm-dd',
+                autoclose: true,
+                language: 'zh-CN',
+            })
+            $("#date").datetimepicker('setDate', new Date());
+        })
+        $("#channelForm").submit(function (e) {
+            $("#channelTable > table > tbody").empty();
+            var postData = "site=" + $("#site").val();
+            $.ajax({
+                url: '/getChannel',
+                type: 'POST',
+                data: postData,
+                cache: false,
+                success: function (data) {
+                    if (parseInt(data.code) == 0) {
+                        $("#channelTable").empty();
+                        var html = "";
+                        html += "<label>总条目:" + data.count + "</label>";
+                        html += "<table class='table table-condensed table-bordered table-striped table-hover'>";
+                        html += "<thead><tr><td>索引</td><td>dname</td><td>site</td><td>schid</td><td>name</td><td>logo</td><td>创建时间</td></tr></thead>";
+                        html += "<tbody>";
+                        data.data.forEach(function (item, index) {
+                            html += "<tr><td>" + index + "</td><td>" + item.dname + "</td><td>" + item.site + "</td><td>" + item.schid + "</td><td>" + item.name + "</td><td><a href='" + item.logo + "' target='_blank'>" + item.logo + "</a></td><td>" + getLocalTime(item.ctime) + "</td></tr>"
+                        })
+                        html += "</tbody>";
+                        html += "</table>"
+                        $("#channelTable").append(html);
+                    } else {
+                        alert(data.message);
+                    }
+
+                }
+            });
+
+            e.preventDefault();
+        })
+        $("#channelEpgForm").submit(function (e) {
+            var starttime = $("#StartTime").val();
+            var endtime = $("#EndTime").val();
+            var postData = "site=" + $("#epgSite").val() + "&dname=" + encodeURIComponent($("#schid").val());
+            if (starttime != "") {
+                starttime = new Date(starttime).setHours(0, 0, 0, 0);
+                postData += "&startTime=" + starttime;
+            }
+            if (endtime != "") {
+                endtime = new Date(endtime).setHours(23, 59, 59, 999);
+                postData += "&endTime=" + endtime;
+            }
+            $.ajax({
+                url: '/getChannelEpg',
+                type: 'POST',
+                data: postData,
+                cache: false,
+                success: function (data) {
+                    if (parseInt(data.code) == 0) {
+                        $("#channelEpgTable").empty();
+                        var html = "";
+                        html += "<label>总条目:" + data.count + "</label>";
+                        html += "<table class='table table-condensed table-bordered table-striped table-hover'>";
+                        html += "<thead><tr><td>site</td><td>dname</td><td>schid</td><td>url</td><td>播出时间</td><td>更新时间</td><td>播出信息</td><td>操作</td></tr></thead>";
+                        html += "<tbody>";
+                        data.data.forEach(function (item, index) {
+                            html += "<tr><td>" + item.site + "</td><td>"+item.dname+"</td><td>" + item.schid + "</td><td><a href='" + item.url + "' target='_blank'>" + item.url + "</a></td><td>" + getLocalTime(item.date) + "</td><td>" + getLocalTime(item.utime) + "</td><td><input value='展开详情' type='button' onclick=\"showModal('" + item._id + "')\" class='btn btn-primary'></td><td><input value='加入对比' type='button' onclick=\"addToCompare('" + item.schid + "','" + item._id + "','" + getLocalTime(item.date) + "')\" class='btn btn-primary'></td></tr>"
+                        })
+                        html += "</tbody>";
+                        html += "</table>"
+                        $("#channelEpgTable").append(html);
+
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+            e.preventDefault();
+        })
+        $("#compareForm").submit(function (e) {
+            var date = $("#date").val();
+            if (!date || date == "") {
+                alert("请选择时间");
+            } else {
+                var addTable = function () {
+                    var postData = "site=" + $("#compareSite").val() + "&schid=" + $("#compareSchid").val() + "&date=" + date;
+                    $.ajax({
+                        url: '/getChannelEpgEntity',
+                        type: 'POST',
+                        data: postData,
+                        cache: false,
+                        success: function (data) {
+                            if (parseInt(data.code) == 0) {
+                                var content = data.data;
+                                var html = "";
+                                html += "<ul style='float:left;padding: 10px;padding-top:50px' class='list-group'><label class='site' title=\"" + content.site + "\">Site:" + content.site + "</label></label><label title=\"" + content.date + "\" class='date'>,Date:" + getLocalTime(content.date) + "</label><label class='schid' title=\"" + content.schid + "\">,Channel:" + content.schid + "</label>";
+                                content.epg.forEach(function (item, index) {
+                                    html += "<li class='list-group-item'>" + getLocalTime(item.starttime) + ":" + item.program + "</li>"
+                                })
+                                html += "</ul>";
+                                $("#tableCollection").append(html);
+                            } else {
+                                alert(data.message);
+                            }
+
+                        }
+                    });
+                }
+                date = new Date(date).setHours(0, 0, 0, 0);
+                var collections = $("#tableCollection > ul");
+                console.log("collections :" + collections.length);
+                if (!collections || collections == 'undefined' || collections.length == 0) {
+                    addTable();
+
+                } else {
+                    var flag = true;
+                    collections.each(function () {
+                        if ($(this).find("label.date").attr("title") == date.toString() && $("#compareSite").val() == $(this).find("label.site").attr("title") && $("#compareSchid").val() == $(this).find("label.schid").attr("title")) {
+                            flag = false;
+                            return false;
+                        }
+                    });
+                    if (flag) {
+                        addTable();
+                    } else {
+                        alert("该条记录已添加");
+                    }
+
+                }
+            }
+            e.preventDefault();
+        })
+        $("#clear").click(function (e) {
+            $("#tableCollection").empty();
+            e.preventDefault();
+        });
+        function getLocalTime(nS) {
+            return new Date(parseInt(nS)).toLocaleString().replace(/:\d{1,2}$/, ' ');
+        }
+        function getSchid(site) {
+            var postData = "site=" + site
+            $('#schid').empty();
+            $.ajax({
+                url: '/getSchid',
+                type: 'POST',
+                data: postData,
+                cache: false,
+                success: function (data) {
+                    if (parseInt(data.code) == 0) {
+                        var html = "";
+                        data.data.forEach(function (item, index) {
+                            html += "<option value='" + item.dname + "'>" + item.dname + "(" + item.schid + ")" + "</option>";
+                        })
+                        $('#schid').append(html);
+                    } else {
+                        alert(data.message)
+                    }
+                }
+            });
+        }
+        function getSchidCompare(site) {
+            var postData = "site=" + site
+            $('#compareSchid').empty();
+            $.ajax({
+                url: '/getSchid',
+                type: 'POST',
+                data: postData,
+                cache: false,
+                success: function (data) {
+                    if (parseInt(data.code) == 0) {
+                        var html = "";
+                        data.data.forEach(function (item, index) {
+                            html += "<option value='" + item.schid + "'>" + item.schid + "(" + item.dname + ")" + "</option>";
+                        })
+                        $('#compareSchid').append(html);
+                    } else {
+                        alert(data.message)
+                    }
+                }
+            });
+        }
+        function showModal(id) {
+            $("#myModal > div > div > div.modal-body").empty();
+            var postData = "_id=" + id;
+            $.ajax({
+                url: '/getEpgById',
+                type: 'POST',
+                data: postData,
+                cache: false,
+                success: function (data) {
+                    if (parseInt(data.code) == 0) {
+                        var html = "";
+                        html += "<table class='table'>";
+                        html += "<thead><tr><td>节目名称</td><td>播出时间</td></tr></thead>"
+                        data.data.epg.forEach(function (item, index) {
+                            html += "<tr><td>" + item.program + "</td><td>" + getLocalTime(item.starttime) + "+</td></tr>";
+                        })
+                        html += "</table>";
+                        $("#myModal > div > div > div.modal-body").append(html);
+                        $("#myModal").modal("show");
+                    } else {
+                        alert(data.message);
+                    }
+
+                }
+            })
+        }
+        function addToCompare(schid, id, localTime) {
+            var count = parseInt($("#sideMenu > div.toggler>span").text()) + 1;
+            $("#sideMenu > div.toggler>span").text(count);
+            $("#sideMenu > div.row > div.col-xs-12.col-sm-12.col-md-12.col-lg1-12 > div.compareDiv>ul").append("<li class='list-group-item' title=\"" + id + "\">" + schid + ":" + localTime + "  <input type='button' class='btn' value='删除' onclick='removeItem(this)'></li>")
+        }
+        function removeItem(obj) {
+            $(obj).parent("li").remove();
+            var count = parseInt($("#sideMenu > div.toggler>span").text()) - 1;
+            $("#sideMenu > div.toggler>span").text(count);
+        }
+        function getDetail() {
+            var list =null;
+            if($("#sideMenu > div.row > div.col-xs-12.col-sm-12.col-md-12.col-lg1-12 > div.compareDiv>ul > li.list-group-item").length>0) {
+                list = $("#sideMenu > div.row > div.col-xs-12.col-sm-12.col-md-12.col-lg1-12 > div.compareDiv>ul > li.list-group-item");
+            }
+            var arr = [];
+            if (list == null || list == "undefined") {
+                alert("请选择需要对比的数据");
+            } else {
+                list.each(function () {
+                    arr.push($(this).attr('title'));
+                })
+                var postData = "arr=" + arr;
+                $.ajax({
+                    url: '/getEpgByArr',
+                    type: 'POST',
+                    data: postData,
+                    cache: false,
+                    success: function (data) {
+                        if (parseInt(data.code) == 0) {
+                            $("#tableCollection").empty();
+                            var items = data.data;
+                            var html = "";
+                            items.forEach(function (item, index) {
+                                html += "<ul style='float:left;padding: 10px;padding-top:50px' class='list-group'><label class='site' title=\"" + item.site + "\">Site:" + item.site + "</label></label><label title=\"" + item.date + "\" class='date'>,Date:" + getLocalTime(item.date) + "</label><label class='schid' title=\"" + item.schid + "\">,Channel:" + item.schid + "</label>";
+                                item.epg.forEach(function (content, index) {
+                                    html += "<li class='list-group-item'>" + getLocalTime(content.starttime) + ":" + content.program + "</li>"
+                                })
+                                html += "</ul>";
+                            })
+                            $("#tableCollection").append(html);
+                            $('#myTab li:eq(2) a').tab('show');
+                            $("#sideMenu > div.toggler>span").text("0");
+                            $("#sideMenu > div.row > div.col-xs-12.col-sm-12.col-md-12.col-lg1-12 > div.compareDiv>ul").empty();
+                            $("#sideMenu > div.toggler").click();
+
+                        } else {
+                            alert(data.message);
+                        }
+
+                    }
+                })
+            }
+        }

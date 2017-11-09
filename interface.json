@@ -1,0 +1,15 @@
+[{
+  "name": "tvmao_interface",
+  "script": "./bin/www",
+  "out_file": "./logs/interface_access.log",
+  "error_file": "./logs/interface_error.log",
+  "merge_logs": true,
+  "env_production": {
+    "NODE_ENV": "production",
+    "PORT": "9007"
+  },
+  "env_development": {
+    "NODE_ENV": "development",
+    "PORT": "3000"
+  }
+}]
